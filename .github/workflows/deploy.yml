@@ -21,7 +21,7 @@ jobs:
         with:
           command: --version
           preCommands: npx wrangler kv:namespace list | jq -r '.[] | select( .title == "dispoflare-terraform-state" ) | .id' | awk '{print "tfstate_kv="$1}' >> $GITHUB_ENV
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          apiToken: ${{ secrets.CF_API_GLOBAL_KEY }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Init Terraform
@@ -33,7 +33,7 @@ jobs:
         with:
           command: --version
           preCommands: npx wrangler kv:key get --namespace-id=${{ env.tfstate_kv }} terraform.tfstate > ./.terraform/terraform.tfstate
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          apiToken: ${{ secrets.CF_API_GLOBAL_KEY }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           postCommands: chmod 777 ./.terraform/terraform.tfstate
         if: ${{ env.tfstate_kv != '' }}
@@ -43,7 +43,7 @@ jobs:
         working-directory: ./.terraform
         env:
           TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CF_API_GLOBAL_KEY }}
           TF_VAR_sentry_dsn: ${{ secrets.SENTRY_DSN || '' }}
 
       - name: Init Terraform State
@@ -52,14 +52,14 @@ jobs:
         with:
           command: --version
           preCommands: npx wrangler kv:namespace list | jq -r '.[] | select( .title == "dispoflare-terraform-state" ) | .id' | awk '{print "tfstate_kv="$1}' >> $GITHUB_ENV
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          apiToken: ${{ secrets.CF_API_GLOBAL_KEY }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Store Terraform State
         uses: cloudflare/wrangler-action@v3.12.1
         with:
           command: kv:key put --namespace-id=${{ env.tfstate_kv }} terraform.tfstate --path=./.terraform/terraform.tfstate
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          apiToken: ${{ secrets.CF_API_GLOBAL_KEY }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   app:
@@ -85,7 +85,7 @@ jobs:
       - name: Publish to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3.12.1
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          apiToken: ${{ secrets.CF_API_GLOBAL_KEY }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy build/client --branch=${{ github.head_ref || github.ref_name }} --project-name=dispoflare
 
@@ -103,7 +103,7 @@ jobs:
         uses: cloudflare/wrangler-action@v3.12.1
         if: ${{ steps.sentry-check.outputs.sentry == 'true' }}
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          apiToken: ${{ secrets.CF_API_GLOBAL_KEY }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: --version
           secrets: |
@@ -114,13 +114,13 @@ jobs:
       - name: Publish to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3.12.1
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          apiToken: ${{ secrets.CF_API_GLOBAL_KEY }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           secrets: |
             CLOUDFLARE_API_TOKEN
             CLOUDFLARE_ACCOUNT_ID
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_GLOBAL_KEY }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Create a Sentry release
